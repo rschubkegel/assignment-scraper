@@ -154,6 +154,7 @@ def parse_assignments(class_name, site_info):
             due_month = int(due[0])
             due_day = int(due[1])
 
+            # TODO edit this so Wilson's assignments will be parsed OK
             title = None
             description = ''
             for t in cols[2].find_all(text=True):
