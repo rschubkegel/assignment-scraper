@@ -364,6 +364,7 @@ def add_assignments_to_trello(query, assignments, board_id):
                 url,
                 params=query
             )
+            print("Added {}".format(a['title']))
 
             # add label
             card_id = json.loads(response.text)['id']
