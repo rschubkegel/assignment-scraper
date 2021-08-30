@@ -248,7 +248,9 @@ def get_cards_in_lists(query, list_ids):
     print('Converting from JSON to Python list\n')
     cards_list = []
     for card in cards_json:
-        cards_list.append(trello_card_to_dict(card))
+        card_dict = trello_card_to_dict(card)
+        if card_dict:
+            cards_list.append(card_dict)
 
     return cards_list
 
@@ -259,17 +261,22 @@ def trello_card_to_dict(card):
     '''
 
     # parse due date
-    nums = re.findall(r'-\d\d', card['due'])
-    new_month = int(nums[0][1:])
-    new_day = int(nums[1][1:])
+    try:
+        nums = re.findall(r'-\d\d', card['due'])
+        new_month = int(nums[0][1:])
+        new_day = int(nums[1][1:])
 
-    # return dictionary
-    return {
-        'class': card['labels'][0]['name'],
-        'title': card['name'],
-        'due': (new_month, new_day),
-        'description': card['desc']
-    }
+        # return dictionary
+        return {
+            'class': card['labels'][0]['name'],
+            'title': card['name'],
+            'due': (new_month, new_day),
+            'description': card['desc']
+        }
+
+    # this Trello card didn't have a due date
+    except Exception as error:
+        return None
 
 
 def get_new_assignments(assignments, trello_cards):
