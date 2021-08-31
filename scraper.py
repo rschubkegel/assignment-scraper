@@ -59,10 +59,6 @@ def main():
 
     if len(new_assignments) != 0:
 
-        # print new assignments
-        print('There are {} new assignments:'.format(len(new_assignments)))
-        # print_assignments(new_assignments)
-
         # add new assignments to Trello
         add_assignments_to_trello( \
             query, new_assignments, TO_DO_LIST_ID)
@@ -154,8 +150,14 @@ def parse_assignments(class_name, site_info):
             due_month = int(due[0])
             due_day = int(due[1])
 
-            # TODO edit this so Wilson's assignments will be parsed OK
+            # wilson uses <em> for assignment titles
             title = None
+            if re.search('bwilson', site_info['url']):
+                title = cols[2].find('em').find_all(text=True)[0].strip()
+                title = re.sub(r'&', 'and', title)
+
+            # description tends to have extra spaces,
+            # so I take those out
             description = ''
             for t in cols[2].find_all(text=True):
                 line = re.sub(r'\s+', ' ', t)
@@ -209,12 +211,12 @@ def get_list_ids(query):
     )
     lists = json.loads(response.text)
 
-    print('Compiling Trello list ids:')
+    # print('Compiling Trello list ids:')
     ids = []
     for l in lists:
         ids.append(l['id'])
-        print(f'Added list id {ids[-1]}')
-    print('All Trello list ids compiled\n')
+        # print(f'Added list id {ids[-1]}')
+    # print('All Trello list ids compiled\n')
 
     return ids
 
@@ -282,17 +284,25 @@ def trello_card_to_dict(card):
 
 def get_new_assignments(assignments, trello_cards):
     '''
-    TODO
+    Compare assignments by *title* and add return the new ones.
+
+    params:
+    - assignments: a dict of assignments from the assignments page
+    - trello_cards: a dict of assignments from Trello
+
+    returns:
+    - a dict of new assignments (name did not appear on Trello)
     '''
 
     new_assignments = []
     for a in assignments:
-        is_new = False
+        is_new = True
         for card in trello_cards:
-            if a['title'] != card['title']:
-                is_new = True
+            if a['title'] == card['title']:
+                is_new = False
                 break
-        new_assignments.append(a)
+        if is_new:
+            new_assignments.append(a)
 
     return new_assignments
 
@@ -333,12 +343,20 @@ def get_trello_labels(query):
 
 def add_assignments_to_trello(query, assignments, board_id):
     '''
-    TODO
+    Add dictionary of assignments to the specified Trello board.
+
+    params:
+    - query: a dictionary with Trello API key and token
+    - assignments: a dictionary of new school assignments
+    - board_id: the ID of the Trello board to add new assignments to
+
+    returns:
+    - None
     '''
 
     trello_labels = get_trello_labels(query)
 
-    print('Adding assignments to Trello')
+    print('Adding {} new assignments to Trello'.format(len(assignments)))
 
     count = 0
     for a in assignments:
@@ -352,7 +370,7 @@ def add_assignments_to_trello(query, assignments, board_id):
         else:
 
             # format due date
-            due = date(2021, a['due'][0], a['due'][0]).isoformat()
+            due = date(2021, a['due'][0], a['due'][1] + 1).isoformat()
 
             url = 'https://api.trello.com/1/cards?' \
                 + 'idList={}&name={}&desc={}&due={}'\
