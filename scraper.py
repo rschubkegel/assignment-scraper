@@ -13,7 +13,17 @@ TO_DO_LIST_ID = '5f60cc5ab8b90f19b7739b14'
 
 def main():
     '''
-    TODO
+    Loads a Trello key/token from file, arguments, or CL input.
+    Pulls homework assignments from class pages and converts to Python dict.
+    Grabs assignments from Trello via REST API and puts them in Python dict.
+    Compares dictionaries to find new homework assignments
+    and uploads them to Trello.
+
+    params:
+    - none
+
+    returns:
+    - none
     '''
 
     # if possible, load data from files provided in command-line arguments
@@ -69,7 +79,16 @@ def main():
 
 def get_credentials(path='credentials.json'):
     '''
-    TODO
+    Tries to load Trello API key/token in a two ways:
+    1) Load from a JSON file or
+    2) Ask for key/token via command-line input.
+    If both of these fail, the program will terminate.
+
+    params:
+    - path: the JSON file where Trello API key/token are stored
+
+    returns:
+    - a tuple with Trello API key, token
     '''
 
     key = None
@@ -104,7 +123,14 @@ def get_credentials(path='credentials.json'):
 
 def get_site_info(path='site-info.json'):
     '''
-    TODO
+    Tries to load assignments page info from a file
+    or quits the program if it fails.
+
+    params:
+    - path: the JSON file from which to load the assignments page info
+
+    returns:
+    - a python dict of site information
     '''
 
     try:
@@ -180,7 +206,13 @@ def parse_assignments(class_name, site_info):
 
 def print_assignments(assignments):
     '''
-    TODO
+    Prints each assignment's class title, assignment title, and due date.
+
+    params:
+    - assignments:
+
+    returns:
+    - none
     '''
 
     for a in assignments:
@@ -260,7 +292,14 @@ def get_cards_in_lists(query, list_ids):
 
 def trello_card_to_dict(card):
     '''
-    TODO
+    Converts a Trello card (received from HTTPS request) to a Python dict.
+
+    params:
+    - card: the Trello card received from REST request
+
+    returns:
+    - Python dict with keys class, title, due, and description,
+      or None if the Trello card didn't have all those fields
     '''
 
     # parse due date
@@ -309,7 +348,14 @@ def get_new_assignments(assignments, trello_cards):
 
 def get_to_do_id(query, list_ids):
     '''
-    TODO
+    Gets the list ID of the 'To-Do' list on board or quits if it doesn't exist.
+
+    params:
+    - query: a dictionary with Trello API key and token
+    - list_ids: a list of all Trello list IDs in 'School' board
+
+    returns:
+    - ID of the 'To-Do' list
     '''
 
     for id in list_ids:
@@ -327,7 +373,13 @@ def get_to_do_id(query, list_ids):
 
 def get_trello_labels(query):
     '''
-    TODO
+    Gets the labels on the Trello board specified in program constants.
+
+    params:
+    - query: a dictionary with Trello API key and token
+
+    returns:
+    - a list of Trello labels (class names)
     '''
 
     labels_json = json.loads(requests.request(
