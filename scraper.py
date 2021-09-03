@@ -65,16 +65,10 @@ def main():
 
     # compare most recent assignment on Trello to
     # most recent assignment from assignments pages
-    new_assignments = get_new_assignments(assignments, cards)
+    get_new_assignments(assignments, cards)
 
-    if len(new_assignments) != 0:
-
-        # add new assignments to Trello
-        add_assignments_to_trello( \
-            query, new_assignments, TO_DO_LIST_ID)
-
-    else:
-        print('There are no new assignments')
+    # upload assignments
+    handle_new_assignments(query, assignments, ask_to_add=True)
 
 
 def get_credentials(path='credentials.json'):
@@ -280,7 +274,6 @@ def get_cards_in_lists(query, list_ids):
     print('Fetching all Trello cards:')
     cards_json = []
     for id in list_ids:
-        print(f'Fetching cards from list {id}')
         response = requests.request(
             'GET',
             url.format(id),
@@ -458,6 +451,33 @@ def add_assignments_to_trello(query, assignments, board_id):
             count += 1
 
     print('{} assignments added\n'.format(count))
+
+
+def handle_new_assignments(query, new_assignments, ask_to_add=False):
+    '''
+    TODO
+    '''
+
+    if len(new_assignments) != 0:
+
+        # print new assignments
+        print('{} new assignments found:'.format(len(new_assignments)))
+        print_assignments(new_assignments)
+
+        # automatically add new assignments if param not set to true
+        choice = 'y'
+        if ask_to_add:
+            # only add new assignments if user wants to
+            choice = input('Would you like to add them to Trello (y/n)? ').lower()
+
+        # add new assignments iff user entered y or yes
+        if choice == 'y' or choice == 'yes':
+            add_assignments_to_trello( \
+                query, new_assignments, TO_DO_LIST_ID)
+
+    # there were no new assignments 🙌
+    else:
+        print('There are no new assignments')
 
 
 main()
