@@ -168,22 +168,33 @@ def parse_assignments(class_name, site_info):
         # and assignements always have m/d date format
         if len(cols) == 3 and re.search(r'/', cols[0].string):
 
-            # assigned = tuple(re.split(r'/', cols[0].string.strip()))
-            # assigned_month = int(assigned[0])
-            # assigned_day = int(assigned[1])
-
-            due = tuple(re.split(r'/', cols[1].string.strip()))
+            # assignment due dates are always column 2/3
+            due_text = re.sub(r"'", "", repr(cols[1].contents[0]))
+            due = tuple(re.split(r'/', due_text))
             due_month = int(due[0])
             due_day = int(due[1])
 
-            # <em> typically used for assignment titles
-            title = cols[2].find('em').find_all(text=True)[0].strip()
-            title = re.sub(r'&', 'and', title)
+            # <em> typically used for assignment titles,
+            # but Hansen breaks this rule 😠 so assignment names
+            # are the assignment number by default
+            title = "Assignment {}".format(len(assignments) + 1)
+
+            # if an em tag exists in col 3, then
+            # its concent will be used as the title of the assignment
+            em_tags = cols[2].find('em').find_all(text=True)
+            if len(em_tags) > 0 and re.search(r'\A<em>', repr(cols[2])):
+                title = em_tags[0].strip()
+                title = re.sub(r'&', 'and', title)
 
             # description tends to have extra spaces,
             # so I take those out
             description = ''
             for t in cols[2].find_all(text=True):
+
+                # don't put the assignment tile in the description
+                if t == em_tags[0]:
+                    continue
+
                 line = re.sub(r'\s+', ' ', t)
                 if not title and re.search(r':', t):
                     title = line.strip()
