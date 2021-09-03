@@ -65,10 +65,10 @@ def main():
 
     # compare most recent assignment on Trello to
     # most recent assignment from assignments pages
-    get_new_assignments(assignments, cards)
+    new_assignments = get_new_assignments(assignments, cards)
 
     # upload assignments
-    handle_new_assignments(query, assignments, ask_to_add=True)
+    handle_new_assignments(query, new_assignments, ask_to_add=True)
 
 
 def get_credentials(path='credentials.json'):
@@ -176,9 +176,12 @@ def parse_assignments(class_name, site_info):
             # if an em tag exists in col 3, then
             # its concent will be used as the title of the assignment
             em_tags = cols[2].find('em').find_all(text=True)
-            if len(em_tags) > 0 and re.search(r'\A<em>', repr(cols[2])):
+            # print(repr(cols[2]))
+            # sys.exit()
+            if len(em_tags) > 0 and re.search(r'\A<td><em>', repr(cols[2])):
                 title = em_tags[0].strip()
                 title = re.sub(r'&', 'and', title)
+                title = re.sub(r'\s+', ' ', title)
 
             # description tends to have extra spaces,
             # so I take those out
@@ -455,7 +458,16 @@ def add_assignments_to_trello(query, assignments, board_id):
 
 def handle_new_assignments(query, new_assignments, ask_to_add=False):
     '''
-    TODO
+    Prints out new assignments and (optionally) asks user if they should be
+    added to Trello, then adds them to Trello.
+
+    params:
+    - query: a dictionary with Trello API key and token
+    - new_assignments: assignments to be added to Trello
+    - ask_to_add: automatically adds assignments to Trello if not set to True
+
+    returns:
+    - none
     '''
 
     if len(new_assignments) != 0:
