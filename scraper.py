@@ -176,11 +176,9 @@ def parse_assignments(class_name, site_info):
             due_month = int(due[0])
             due_day = int(due[1])
 
-            # wilson uses <em> for assignment titles
-            title = None
-            if re.search('bwilson', site_info['url']):
-                title = cols[2].find('em').find_all(text=True)[0].strip()
-                title = re.sub(r'&', 'and', title)
+            # <em> typically used for assignment titles
+            title = cols[2].find('em').find_all(text=True)[0].strip()
+            title = re.sub(r'&', 'and', title)
 
             # description tends to have extra spaces,
             # so I take those out
