@@ -6,22 +6,17 @@ Authored by [rschubkegel](https://github.com/rschubkegel).
 
 Keeping up with new school assignments can be a pain in the b*tt. This automates the process of checking the assignments pages for new homework.
 
-## Dependencies
-
-Imports:
-- [beautifulsoup4](https://www.crummy.com/software/BeautifulSoup/)
-- [requests](https://docs.python-requests.org/en/master/index.html)
-- [re](https://docs.python.org/3/library/re.html)
-- [json](https://docs.python.org/3/library/json.html)
-- [getpass](https://docs.python.org/3/library/getpass.html)
-- [sys](https://docs.python.org/3/library/sys.html)
-- [datetime](https://docs.python.org/3/library/datetime.html)
-
 ## Usage
+
+This program requires three JSON files: `credentials.json`, `site-info.json`, and `trello-info.json`. The first two are omitted from the repository for security reasons.
+
+### Tracked Files
+
+The file `trello-info.json` stores the ID of the Trello board that holds assignments and the different lists on that board. While cards are expected to change frequently and labels will change each semester, the board and lists are not likely to change so it is stored in a file for efficiency.
 
 ### Untracked Files
 
-This program expects two files: `credentials.json` and `site-info.json`. A filepath to `credentials.json` and `site-info.json` may be given as command-line arguments, otherwise they will be searched for in the local diretory. If no arguments are given and `credentials.json` is not found in the local directory, the program will manually ask for a Trello key and token to interact with the REST API. If no arguments are given and `site-info.json` is not found in the local directory, the program will terminate.
+This program also expects two untracked files: `credentials.json` and `site-info.json`. The first contains the Trello REST API developer key and token. The second contains a list of school assignment pages from which to parse new assignments.
 
 ### Format of `credentials.json`
 

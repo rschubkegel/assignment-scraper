@@ -2,20 +2,17 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import json
-import getpass
 import sys
+import os.path
 from datetime import date
-
-
-SCHOOL_BOARD_ID = '7ARNAyc5'
-TO_DO_LIST_ID = '5f60cc5ab8b90f19b7739b14'
 
 
 def main():
     '''
-    Loads a Trello key/token from file, arguments, or CL input.
+    Loads Trello API key/token, assignment page info,
+    and Trello school board info from file.
     Pulls homework assignments from class pages and converts to Python dict.
-    Grabs assignments from Trello via REST API and puts them in Python dict.
+    Grabs assignments from Trello and puts them in Python dict.
     Compares dictionaries to find new homework assignments
     and uploads them to Trello.
 
@@ -26,96 +23,70 @@ def main():
     - none
     '''
 
-    # if possible, load data from files provided in command-line arguments
-    if len(sys.argv) > 1:
-        if len(sys.argv) != 3:
-            print('Fatal error: expected two arguments but got {}. Quitting...'\
-                .format(len(sys.argv) - 1))
-            sys.exit()
-        else:
-            key, token = get_credentials(sys.argv[1])
-            site_info = get_site_info(sys.argv[2])
-
-    # if no command-line arguments given, try to load default local files
-    else:
-        key, token = get_credentials()
-        site_info = get_site_info()
+    # load program data from files
+    query = load_credentials()
+    site_info = load_site_info()
+    trello_board_id, trello_lists = load_trello_info()
+    print()
 
     # only continue if there are assignment pages to check!
     if len(site_info.items()) == 0:
-        print('No assignment pages found, quitting...')
+        print('No assignment pages found')
         sys.exit()
 
     # parse assignments from pages
-    print('Parsing all assignment pages:')
     assignments = []
     for (k, v) in site_info.items():
         print('Parsing assignments for {} from {}'.format(k, v['url']))
         assignments.extend(parse_assignments(k, v))
-
-    print('Assignments parsed\n')
+    print()
 
     # fetch all cards from Trello
-    query = {
-        'key': key,
-        'token': token
-    }
-    list_ids = get_list_ids(query)
-    cards = get_cards_in_lists(query, list_ids)
+    print('Fetching cards from Trello board {}'.format(trello_board_id))
+    cards = get_trello_cards(query, trello_lists)
+    print()
 
     # compare most recent assignment on Trello to
     # most recent assignment from assignments pages
     new_assignments = get_new_assignments(assignments, cards)
 
     # upload assignments
-    handle_new_assignments(query, new_assignments, ask_to_add=True)
+    handle_new_assignments(
+        query, trello_board_id, new_assignments, ask_to_add=True)
 
 
-def get_credentials(path='credentials.json'):
+def load_credentials(path='credentials.json'):
     '''
-    Tries to load Trello API key/token in a two ways:
-    1) Load from a JSON file or
-    2) Ask for key/token via command-line input.
-    If both of these fail, the program will terminate.
+    Loads Trello API key/token from a file. Quits app if not successful.
 
     params:
     - path: the JSON file where Trello API key/token are stored
 
     returns:
-    - a tuple with Trello API key, token
+    - a Python dictionary with Trello API key, token
     '''
 
-    key = None
-    token = None
-
     # try to load credentials from local JSON file
-    kt_entered = False
-    try:
-        f = open(path)
-        data = json.load(f)
-        key = data['key']
-        token = data['token']
-        kt_entered = True
-        print('Credentials loaded from "credentials.json"\n')
-    except Exception as error:
-        print('No "credentials.json" file found. Enter Trello key/token:')
-
-    # ask user for Trello key/token
-    while not kt_entered:
+    if os.path.exists(path):
         try:
-            key = getpass.getpass(prompt='Key: ')
-            token = getpass.getpass(prompt='Token: ')
-        except Exception as error:
-            print('ERROR', error)
+            f = open(path)
+            data = json.load(f)
+            key = data['key']
+            token = data['token']
+            print('Credentials loaded from {}'.format(path))
+            return {'key': key, 'token': token}
+
+        except Exception as e:
+            print('Fatal error: '.format(e))
             sys.exit()
-        else:
-            print()
-            kt_entered = True
 
-    return (key, token)
+    # file did not exist
+    else:
+        print('Fatal error: file {} does not exist'.format(path))
+        sys.exit()
 
 
-def get_site_info(path='site-info.json'):
+def load_site_info(path='site-info.json'):
     '''
     Tries to load assignments page info from a file
     or quits the program if it fails.
@@ -127,13 +98,54 @@ def get_site_info(path='site-info.json'):
     - a python dict of site information
     '''
 
-    try:
-        print('Loading assignment page info from "site-info.json"\n')
-        f = open(path)
-        return json.load(f)
-    except Exception as error:
-        print('Fatal error: no such file "site-info.json"')
-        print('Quitting...')
+    # load data from file if it exists
+    if os.path.exists(path):
+        try:
+            f = open(path)
+            print('Assignment page info loaded from {}'.format(path))
+            return json.load(f)
+
+        # I/O error of some kind
+        except Exception as e:
+            print('Fatal error: '.format(e))
+            sys.exit()
+
+    # file did not exist
+    else:
+        print('Fatal error: file {} does not exist'.format(path))
+        sys.exit()
+
+
+def load_trello_info(path='trello-info.json'):
+    '''
+    Loads the board ID, lists on board, and labels on board from JSON file.
+    If the file does not exist, program exits.
+
+    params:
+    - path: the JSON filename to load/store Trello information
+
+    returns:
+    - a tuple with trello board ID, trello lists
+    '''
+
+    # load data from file if it exists
+    if os.path.exists(path):
+        try:
+            f = open(path)
+            data = json.load(f)
+            board_id = data['board-id']
+            lists = data['lists']
+            print('Trello info loaded from {}'.format(path))
+            return (board_id, lists)
+
+        # I/O error of some kind
+        except Exception as e:
+            print('Fatal error: '.format(e))
+            sys.exit()
+
+    # file did not exist
+    else:
+        print('Fatal error: file {} does not exist'.format(path))
         sys.exit()
 
 
@@ -210,63 +222,13 @@ def parse_assignments(class_name, site_info):
     return assignments
 
 
-def print_assignments(assignments):
+def get_trello_cards(query, trello_lists):
     '''
-    Prints each assignment's class title, assignment title, and due date.
-
-    params:
-    - assignments:
-
-    returns:
-    - none
-    '''
-
-    for a in assignments:
-        print('Class:\t\t{}'.format(a['class']))
-        print('Title:\t\t{}'.format(a['title']))
-        print('Due date:\t{}/{}'.format(a['due'][0], a['due'][1]))
-        print()
-
-
-def get_list_ids(query):
-    '''
-    Returns a list of all Trello list ids in the School board.
-    https://developer.atlassian.com/cloud/trello/rest/api-group-boards/#api-boards-id-lists-get
+    Returns a Python object of all the card in the specified lists.
 
     params:
     - query: a dictionary with Trello API key and token
-
-    returns:
-    - a list of all Trello list ids in the School board
-    '''
-
-    url = 'https://api.trello.com/1/boards/{}/lists'.format(SCHOOL_BOARD_ID)
-
-    response = requests.request(
-        'GET',
-        url,
-        params=query
-    )
-    lists = json.loads(response.text)
-
-    # print('Compiling Trello list ids:')
-    ids = []
-    for l in lists:
-        ids.append(l['id'])
-        # print(f'Added list id {ids[-1]}')
-    # print('All Trello list ids compiled\n')
-
-    return ids
-
-
-def get_cards_in_lists(query, list_ids):
-    '''
-    Returns a Python object of all the card in a list.
-    https://developer.atlassian.com/cloud/trello/rest/api-group-lists/#api-lists-id-cards-get
-
-    params:
-    - query: a dictionary with Trello API key and token
-    - list_ids: a list of the ids of all the lists to retrieve cards from
+    - trello_lists: a list of dictionaries (name, id) of Trello lists
 
     returns:
     - a Python object of all the card in a list
@@ -274,18 +236,16 @@ def get_cards_in_lists(query, list_ids):
     
     url = 'https://api.trello.com/1/lists/{}/cards'
 
-    print('Fetching all Trello cards:')
     cards_json = []
-    for id in list_ids:
+    for list in trello_lists:
         response = requests.request(
             'GET',
-            url.format(id),
+            url.format(list['id']),
             params=query
         )
         cards_json.extend(json.loads(response.text))
-    print('All Trello cards fetched')
 
-    print('Converting from JSON to Python list\n')
+    # convert to Python dictionaries for easy comparison
     cards_list = []
     for card in cards_json:
         card_dict = trello_card_to_dict(card)
@@ -326,6 +286,29 @@ def trello_card_to_dict(card):
         return None
 
 
+def get_trello_labels(query, board_id):
+    '''
+    Gets the labels on the Trello board specified in program constants.
+
+    params:
+    - query: a dictionary with Trello API key and token
+    - board_id: the ID of the Trello board whose labels are being fetched
+
+    returns:
+    - a list of Trello labels (class names)
+    '''
+
+    labels_json = json.loads(requests.request(
+        'GET',
+        f'https://api.trello.com/1/boards/{board_id}/labels',
+        params=query
+    ).text)
+    labels = {}
+    for l in labels_json:
+        labels[l['name']] = l['id']
+    return labels
+
+
 def get_new_assignments(assignments, trello_cards):
     '''
     Compare assignments by *title* and add return the new ones.
@@ -351,53 +334,6 @@ def get_new_assignments(assignments, trello_cards):
     return new_assignments
 
 
-def get_to_do_id(query, list_ids):
-    '''
-    Gets the list ID of the 'To-Do' list on board or quits if it doesn't exist.
-
-    params:
-    - query: a dictionary with Trello API key and token
-    - list_ids: a list of all Trello list IDs in 'School' board
-
-    returns:
-    - ID of the 'To-Do' list
-    '''
-
-    for id in list_ids:
-        url = 'https://api.trello.com/1/lists/{}'.format(id)
-        response = requests.request(
-            'GET',
-            url,
-            params=query
-        )
-        if json.loads(response.text)['name'] == 'To-Do':
-            return id
-    print('Fatal error: "To-Do" list not found. Quitting...')
-    sys.exit()
-
-
-def get_trello_labels(query):
-    '''
-    Gets the labels on the Trello board specified in program constants.
-
-    params:
-    - query: a dictionary with Trello API key and token
-
-    returns:
-    - a list of Trello labels (class names)
-    '''
-
-    labels_json = json.loads(requests.request(
-        'GET',
-        f'https://api.trello.com/1/boards/{SCHOOL_BOARD_ID}/labels',
-        params=query
-    ).text)
-    labels = {}
-    for l in labels_json:
-        labels[l['name']] = l['id']
-    return labels
-
-
 def add_assignments_to_trello(query, assignments, board_id):
     '''
     Add dictionary of assignments to the specified Trello board.
@@ -411,7 +347,7 @@ def add_assignments_to_trello(query, assignments, board_id):
     - None
     '''
 
-    trello_labels = get_trello_labels(query)
+    trello_labels = get_trello_labels(query, board_id)
 
     print('Adding {} new assignments to Trello'.format(len(assignments)))
 
@@ -456,13 +392,14 @@ def add_assignments_to_trello(query, assignments, board_id):
     print('{} assignments added\n'.format(count))
 
 
-def handle_new_assignments(query, new_assignments, ask_to_add=False):
+def handle_new_assignments(query, board_id, new_assignments, ask_to_add=False):
     '''
     Prints out new assignments and (optionally) asks user if they should be
     added to Trello, then adds them to Trello.
 
     params:
     - query: a dictionary with Trello API key and token
+    - board_id: the ID of the board to add new assignments to
     - new_assignments: assignments to be added to Trello
     - ask_to_add: automatically adds assignments to Trello if not set to True
 
@@ -485,11 +422,29 @@ def handle_new_assignments(query, new_assignments, ask_to_add=False):
         # add new assignments iff user entered y or yes
         if choice == 'y' or choice == 'yes':
             add_assignments_to_trello( \
-                query, new_assignments, TO_DO_LIST_ID)
+                query, new_assignments, board_id)
 
     # there were no new assignments 🙌
     else:
         print('There are no new assignments')
+
+
+def print_assignments(assignments):
+    '''
+    Prints each assignment's class title, assignment title, and due date.
+
+    params:
+    - assignments:
+
+    returns:
+    - none
+    '''
+
+    for a in assignments:
+        print('Class:\t\t{}'.format(a['class']))
+        print('Title:\t\t{}'.format(a['title']))
+        print('Due date:\t{}/{}'.format(a['due'][0], a['due'][1]))
+        print()
 
 
 main()

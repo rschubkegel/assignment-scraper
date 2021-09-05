@@ -1,0 +1,9 @@
+{
+    "board-id": "7ARNAyc5",
+    "lists": [
+        {"name": "Today", "id": "5f60cc60cc639973d1335ede"},
+        {"name": "This Week", "id": "5f60cc5e9e15a575fa723405"},
+        {"name": "To-Do", "id": "5f60cc5ab8b90f19b7739b14"},
+        {"name": "Done", "id": "5fa0acbf1e3c9a1e5cbe7f10"}
+    ]
+}
