@@ -57,6 +57,8 @@ def main():
 
 def load_credentials(path='credentials.json'):
     '''
+    Attempts to find credentials file in program args,
+    if that fails it just searches in the local directory.
     Loads Trello API key/token from a file. Quits app if not successful.
 
     params:
@@ -65,6 +67,13 @@ def load_credentials(path='credentials.json'):
     returns:
     - a Python dictionary with Trello API key, token
     '''
+
+    # try to get file path from arguments
+    if len(sys.argv) > 1:
+        pattern = re.compile(path)
+        for arg in sys.argv[1:]:
+            if pattern.search(arg):
+                path = arg
 
     # try to load credentials from local JSON file
     if os.path.exists(path):
@@ -88,7 +97,9 @@ def load_credentials(path='credentials.json'):
 
 def load_site_info(path='site-info.json'):
     '''
-    Tries to load assignments page info from a file
+    Attempts to find site info file in program args,
+    if that fails it just searches in the local directory.
+    Loads assignments page info from a file
     or quits the program if it fails.
 
     params:
@@ -97,6 +108,13 @@ def load_site_info(path='site-info.json'):
     returns:
     - a python dict of site information
     '''
+
+    # try to get file path from arguments
+    if len(sys.argv) > 1:
+        pattern = re.compile(path)
+        for arg in sys.argv[1:]:
+            if pattern.search(arg):
+                path = arg
 
     # load data from file if it exists
     if os.path.exists(path):
@@ -118,6 +136,8 @@ def load_site_info(path='site-info.json'):
 
 def load_trello_info(path='trello-info.json'):
     '''
+    Attempts to find Trello info file in program args,
+    if that fails it just searches in the local directory.
     Loads the board ID, lists on board, and labels on board from JSON file.
     If the file does not exist, program exits.
 
@@ -127,6 +147,13 @@ def load_trello_info(path='trello-info.json'):
     returns:
     - a tuple with trello board ID, trello lists
     '''
+
+    # try to get file path from arguments
+    if len(sys.argv) > 1:
+        pattern = re.compile(path)
+        for arg in sys.argv[1:]:
+            if pattern.search(arg):
+                path = arg
 
     # load data from file if it exists
     if os.path.exists(path):
