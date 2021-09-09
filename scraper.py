@@ -51,8 +51,8 @@ def main():
     new_assignments = get_new_assignments(assignments, cards)
 
     # upload assignments
-    handle_new_assignments(
-        query, trello_board_id, new_assignments, ask_to_add=True)
+    handle_new_assignments(query, trello_board_id, trello_lists["To-Do"],
+        new_assignments, ask_to_add=True)
 
 
 def load_credentials(path='credentials.json'):
@@ -235,10 +235,10 @@ def get_trello_cards(query, trello_lists):
     url = 'https://api.trello.com/1/lists/{}/cards'
 
     cards_json = []
-    for list in trello_lists:
+    for (name, id) in trello_lists.items():
         response = requests.request(
             'GET',
-            url.format(list['id']),
+            url.format(id),
             params=query
         )
         cards_json.extend(json.loads(response.text))
@@ -332,14 +332,15 @@ def get_new_assignments(assignments, trello_cards):
     return new_assignments
 
 
-def add_assignments_to_trello(query, assignments, board_id):
+def add_assignments_to_trello(query, assignments, board_id, list_id):
     '''
     Add dictionary of assignments to the specified Trello board.
 
     params:
     - query: a dictionary with Trello API key and token
     - assignments: a dictionary of new school assignments
-    - board_id: the ID of the Trello board to add new assignments to
+    - board_id: the Trello board from which to get labels
+    - list_id: the ID of the Trello list to add new assignments to
 
     returns:
     - None
@@ -365,7 +366,7 @@ def add_assignments_to_trello(query, assignments, board_id):
 
             url = 'https://api.trello.com/1/cards?' \
                 + 'idList={}&name={}&desc={}&due={}'\
-                .format(board_id, a['title'], a['description'], due)
+                .format(list_id, a['title'], a['description'], due)
 
             # add the Trello card
             response = requests.request(
@@ -390,14 +391,15 @@ def add_assignments_to_trello(query, assignments, board_id):
     print('{} assignments added\n'.format(count))
 
 
-def handle_new_assignments(query, board_id, new_assignments, ask_to_add=False):
+def handle_new_assignments(query, board_id, list_id, new_assignments, ask_to_add=False):
     '''
     Prints out new assignments and (optionally) asks user if they should be
     added to Trello, then adds them to Trello.
 
     params:
     - query: a dictionary with Trello API key and token
-    - board_id: the ID of the board to add new assignments to
+    - board_id: the ID of board where new assignments will be added
+    - list_id: the ID of the list to add new assignments to
     - new_assignments: assignments to be added to Trello
     - ask_to_add: automatically adds assignments to Trello if not set to True
 
@@ -420,7 +422,7 @@ def handle_new_assignments(query, board_id, new_assignments, ask_to_add=False):
         # add new assignments iff user entered y or yes
         if choice == 'y' or choice == 'yes':
             add_assignments_to_trello( \
-                query, new_assignments, board_id)
+                query, new_assignments, board_id, list_id)
 
     # there were no new assignments 🙌
     else:
