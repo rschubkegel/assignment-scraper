@@ -6,7 +6,7 @@ import sys
 import os.path
 
 
-def load_site_info(path='site-info.json'):
+def load_sites_info(path='site-info.json'):
     '''
     Attempts to find site info file in program args,
     if that fails it just searches in the local directory.
@@ -110,21 +110,19 @@ def get_site_assignments(class_name, site_info):
     return new_assignments
 
 
-def get_assignments():
+def get_assignments(sites_info):
     '''
     TODO
     '''
 
-    site_infos = load_site_info()
-
     # abort operation if no assignment pages found
-    if len(site_infos.items()) == 0:
+    if len(sites_info.items()) == 0:
         print('No assignment pages found')
-        return None
+        sys.exit()
 
     assignments = []
 
-    for (class_name, site_info) in site_infos.items():
+    for (class_name, site_info) in sites_info.items():
         assignments.extend(get_site_assignments(class_name, site_info))
 
     return assignments
