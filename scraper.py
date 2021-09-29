@@ -5,7 +5,10 @@ import json
 import sys
 import os.path
 from datetime import date
+import homework
 
+
+# TODO add --verbose | -v program arg
 
 def main():
     '''
@@ -25,21 +28,12 @@ def main():
 
     # load program data from files
     query = load_credentials()
-    site_info = load_site_info()
     trello_board_id, trello_lists = load_trello_info()
     print()
 
-    # only continue if there are assignment pages to check!
-    if len(site_info.items()) == 0:
-        print('No assignment pages found')
-        sys.exit()
-
     # parse assignments from pages
-    assignments = []
-    for (k, v) in site_info.items():
-        print('Parsing assignments for {} from {}'.format(k, v['url']))
-        assignments.extend(parse_assignments(k, v))
-    print()
+    assignments = homework.get_assignments()
+    print('Assignments parsed successfully\n')
 
     # fetch all cards from Trello
     print('Fetching cards from Trello board {}'.format(trello_board_id))
@@ -95,45 +89,6 @@ def load_credentials(path='credentials.json'):
         sys.exit()
 
 
-def load_site_info(path='site-info.json'):
-    '''
-    Attempts to find site info file in program args,
-    if that fails it just searches in the local directory.
-    Loads assignments page info from a file
-    or quits the program if it fails.
-
-    params:
-    - path: the JSON file from which to load the assignments page info
-
-    returns:
-    - a python dict of site information
-    '''
-
-    # try to get file path from arguments
-    if len(sys.argv) > 1:
-        pattern = re.compile(path)
-        for arg in sys.argv[1:]:
-            if pattern.search(arg):
-                path = arg
-
-    # load data from file if it exists
-    if os.path.exists(path):
-        try:
-            f = open(path)
-            print('Assignment page info loaded from {}'.format(path))
-            return json.load(f)
-
-        # I/O error of some kind
-        except Exception as e:
-            print('Fatal error: '.format(e))
-            sys.exit()
-
-    # file did not exist
-    else:
-        print('Fatal error: file {} does not exist'.format(path))
-        sys.exit()
-
-
 def load_trello_info(path='trello-info.json'):
     '''
     Attempts to find Trello info file in program args,
@@ -174,77 +129,6 @@ def load_trello_info(path='trello-info.json'):
     else:
         print('Fatal error: file {} does not exist'.format(path))
         sys.exit()
-
-
-def parse_assignments(class_name, site_info):
-    '''
-    Creates an HTTP request and parses the response into assignment attributes
-    using beautifulsoup. Returns this as a list of dictionaries of attributes.
-
-    params:
-    - class_name: the name of the class these assignments are for
-    - site_info: a dict of assignment page information
-
-    returns:
-    - a list of dictionaries of assignment attributes
-    '''
-
-    response = requests.get(site_info['url'], headers=site_info['headers'])
-    soup = BeautifulSoup(response.text, 'html.parser')
-    assignments = []
-
-    for row in soup('tr'):
-
-        cols = row('td')
-
-        # assignments always have three columns
-        # and assignements always have m/d date format
-        if len(cols) == 3 and re.search(r'/', cols[0].string):
-
-            # assignment due dates are always column 2/3
-            due_text = re.sub(r"'", "", repr(cols[1].contents[0]))
-            due = tuple(re.split(r'/', due_text))
-            due_month = int(due[0])
-            due_day = int(due[1])
-
-            # <em> typically used for assignment titles,
-            # but Hansen breaks this rule 😠 so assignment names
-            # are the assignment number by default
-            title = "Assignment {}".format(len(assignments) + 1)
-
-            # if an em tag exists in col 3, then
-            # its concent will be used as the title of the assignment
-            em_tags = cols[2].find('em').find_all(text=True)
-            if len(em_tags) > 0 and re.search(r'\A<td><em>', repr(cols[2])):
-                title = em_tags[0].strip()
-                title = re.sub(r'&', 'and', title)
-                title = re.sub(r'\s+', ' ', title)
-
-            # description tends to have extra spaces,
-            # so I take those out
-            description = ''
-            for t in cols[2].find_all(text=True):
-
-                # don't put the assignment tile in the description
-                if t == em_tags[0]:
-                    continue
-
-                line = re.sub(r'\s+', ' ', t)
-                if not title and re.search(r':', t):
-                    title = line.strip()
-                else:
-                    description += line
-            description = description.strip()
-
-            # append assignment dictionary
-            assignments.append({
-                'class': class_name,
-                # 'assigned': (assigned_month, assigned_day),
-                'due': (due_month, due_day),
-                'title': title,
-                'description':description})
-
-    return assignments
 
 
 def get_trello_cards(query, trello_lists):
