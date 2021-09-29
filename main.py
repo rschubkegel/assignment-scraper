@@ -5,7 +5,7 @@ import json
 import sys
 import os.path
 from datetime import date
-import homework
+import scraper
 
 
 # TODO seperate Trello fetch code into another script
@@ -33,7 +33,7 @@ def main():
     print()
 
     # parse assignments from pages
-    assignments = homework.get_assignments()
+    assignments = scraper.get_assignments()
     print('Assignments parsed successfully\n')
 
     # fetch all cards from Trello
