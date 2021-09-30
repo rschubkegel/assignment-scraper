@@ -13,6 +13,7 @@ def print_assignments(assignments):
     - none
     '''
 
+    print()
     for a in assignments:
         print('Class:\t\t{}'.format(a['class']))
         print('Title:\t\t{}'.format(a['title']))

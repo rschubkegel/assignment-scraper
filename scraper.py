@@ -52,28 +52,36 @@ def get_site_assignments(class_name, site_info):
 
     print('Parsing assignments for {} from {}'.format(class_name, site_info['url']))
 
+    # grab HTML and make it into beautiful soup 🍲
     response = requests.get(site_info['url'], headers=site_info['headers'])
     soup = BeautifulSoup(response.text, 'html.parser')
-    new_assignments = []
 
+    # store assignments found in HTML into list
+    assignments = []
     for row in soup('tr'):
-
-        cols = row('td')
 
         # assignments always have three columns
         # and assignements always have m/d date format
+        cols = row('td')
         if len(cols) == 3 and re.search(r'/', cols[0].string):
 
             # assignment due dates are always column 2/3
             due_text = re.sub(r"'", "", repr(cols[1].contents[0]))
             due = tuple(re.split(r'/', due_text))
-            due_month = int(due[0])
-            due_day = int(due[1])
+            try:
+                due_month = int(due[0])
+                due_day = int(due[1])
+
+            # if date parsing failed, this assignment has no due date listed
+            # and should not be added to Trello
+            # e.g. variable due date of final presentations from CSIS 420
+            except Exception as _:
+                continue
 
             # <em> typically used for assignment titles,
             # but Hansen breaks this rule 😠 so assignment names
             # are the assignment number by default
-            title = "Assignment {}".format(len(new_assignments) + 1)
+            title = "Assignment {}".format(len(assignments) + 1)
 
             # if an em tag exists in col 3, then
             # its concent will be used as the title of the assignment
@@ -100,14 +108,14 @@ def get_site_assignments(class_name, site_info):
             description = description.strip()
 
             # append assignment dictionary
-            new_assignments.append({
+            assignments.append({
                 'class': class_name,
                 # 'assigned': (assigned_month, assigned_day),
                 'due': (due_month, due_day),
                 'title': title,
                 'description':description})
 
-    return new_assignments
+    return assignments
 
 
 def get_assignments(sites_info):
@@ -120,8 +128,8 @@ def get_assignments(sites_info):
         print('No assignment pages found')
         sys.exit()
 
+    # get assignments from every page
     assignments = []
-
     for (class_name, site_info) in sites_info.items():
         assignments.extend(get_site_assignments(class_name, site_info))
 
