@@ -4,6 +4,7 @@ import re
 import json
 import sys
 import os.path
+import markdownify
 
 
 def load_sites_info(path='site-info.json'):
@@ -91,21 +92,9 @@ def get_site_assignments(class_name, site_info):
                 title = re.sub(r'&', 'and', title)
                 title = re.sub(r'\s+', ' ', title)
 
-            # description tends to have extra spaces,
-            # so I take those out
-            description = ''
-            for t in cols[2].find_all(text=True):
-
-                # don't put the assignment tile in the description
-                if t == em_tags[0]:
-                    continue
-
-                line = re.sub(r'\s+', ' ', t)
-                if not title and re.search(r':', t):
-                    title = line.strip()
-                else:
-                    description += line
-            description = description.strip()
+            # remove <td> tags from description,
+            # then convert to Markdown so formatting is preserved in Trello
+            description = markdownify.markdownify(re.sub(r'<td>', '', repr(cols[2])))
 
             # append assignment dictionary
             assignments.append({
