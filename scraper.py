@@ -120,6 +120,9 @@ def get_assignments(sites_info):
     # get assignments from every page
     assignments = []
     for (class_name, site_info) in sites_info.items():
-        assignments.extend(get_site_assignments(class_name, site_info))
+        try:
+            assignments.extend(get_site_assignments(class_name, site_info))
+        except Exception as e:
+            print(f'Error parsing {class_name}')
 
     return assignments
