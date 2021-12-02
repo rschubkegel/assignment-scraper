@@ -38,12 +38,12 @@ def load_credentials(path='credentials.json'):
 
         except Exception as e:
             print('Fatal error: '.format(e))
-            sys.exit()
+            sys.exit(1)
 
     # file did not exist
     else:
         print('Fatal error: file {} does not exist'.format(path))
-        sys.exit()
+        sys.exit(1)
 
 
 def load_board_info(path='trello-info.json'):
@@ -80,12 +80,12 @@ def load_board_info(path='trello-info.json'):
         # I/O error of some kind
         except Exception as e:
             print('Fatal error: '.format(e))
-            sys.exit()
+            sys.exit(1)
 
     # file did not exist
     else:
         print('Fatal error: file {} does not exist'.format(path))
-        sys.exit()
+        sys.exit(1)
 
 
 def fetch_assignments(query, trello_lists):
@@ -114,14 +114,14 @@ def fetch_assignments(query, trello_lists):
     # convert to Python dictionaries for easy comparison
     cards_list = []
     for card in cards_json:
-        card_dict = trello_card_to_dict(card)
+        card_dict = _trello_card_to_dict(card)
         if card_dict:
             cards_list.append(card_dict)
 
     return cards_list
 
 
-def trello_card_to_dict(card):
+def _trello_card_to_dict(card):
     '''
     Converts a Trello card (received from HTTPS request) to a Python dict.
 
@@ -152,7 +152,7 @@ def trello_card_to_dict(card):
         return None
 
 
-def get_trello_labels(query, board_id):
+def _get_trello_labels(query, board_id):
     '''
     Gets the labels on the Trello board specified in program constants.
 
@@ -214,7 +214,7 @@ def upload_assignments(query, assignments, board_id, list_id):
     - None
     '''
 
-    trello_labels = get_trello_labels(query, board_id)
+    trello_labels = _get_trello_labels(query, board_id)
 
     print('Adding {} new assignments to Trello'.format(len(assignments)))
 

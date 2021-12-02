@@ -38,17 +38,68 @@ def load_sites_info(path='site-info.json'):
         # I/O error of some kind
         except Exception as e:
             print('Fatal error: '.format(e))
-            sys.exit()
+            sys.exit(1)
 
     # file did not exist
     else:
         print('Fatal error: file {} does not exist'.format(path))
-        sys.exit()
+        sys.exit(1)
 
 
-def get_site_assignments(class_name, site_info):
+def _find_title(td):
     '''
-    TODO
+    If the <td> tag contains <em> as its first child, then this function
+    returns a string representation of the assignment title.
+    Otherwise, it returns None.
+
+    params:
+    - td: a <td> tag corresponding to the assignment description
+      for which a title is desired
+
+    returns:
+    - a string representation of the assignment title if <em> is first child,
+      otherwise None
+    '''
+
+    result = None
+
+    # if first tag within <td> is <em>
+    if len(td.contents) > 0 and td.contents[0].name == 'em':
+        result = list(td.em.stripped_strings)[0]
+        result = re.sub(r'&', 'and', result)
+        result = re.sub(r'\s+', ' ', result)
+
+    return result
+
+
+def _get_site_assignments(class_name, site_info):
+    '''
+    Parses the specified webpage for school assignments.
+    The page must be formatted such that assignments are
+    described in rows of an HTML table. Each table row must have
+    the following attributes:
+
+    - 3 columns: assigned date, due date, assignment description
+    - dates in the format month/day
+
+    If any table row does not have these attributes, it is assumed to be
+    a legend or other description, not a school assignment.
+
+    If the table row contents begins with an <em> tag,
+    it is assumed to be the title of the assignment.
+    Otherwise, the title is "Assignment #" where # is the current count
+    of all assignments found on this page.
+
+    params:
+    - class_name: the name of this class
+    - site_info: the information about this assignment page (see README)
+
+    returns:
+    - a list of dictionaries that hold the following keys:
+      - class
+      - due
+      - title
+      - description
     '''
 
     print('Parsing assignments for {} from {}'.format(class_name, site_info['url']))
@@ -79,18 +130,11 @@ def get_site_assignments(class_name, site_info):
             except Exception as _:
                 continue
 
-            # <em> typically used for assignment titles,
-            # but Hansen breaks this rule 😠 so assignment names
-            # are the assignment number by default
-            title = "Assignment {}".format(len(assignments) + 1)
-
-            # if an em tag exists in col 3, then
-            # its concent will be used as the title of the assignment
-            em_tags = cols[2].find('em').find_all(text=True)
-            if len(em_tags) > 0 and re.search(r'\A<td><em>', repr(cols[2])):
-                title = em_tags[0].strip()
-                title = re.sub(r'&', 'and', title)
-                title = re.sub(r'\s+', ' ', title)
+            # if an <em> tag exists at beginning of table data contents,
+            # use it for the assignment title, otherwise use "Assignment #"
+            title = _find_title(cols[2])
+            if not title:
+                title = "Assignment {}".format(len(assignments) + 1)
 
             # remove <td> tags from description,
             # then convert to Markdown so formatting is preserved in Trello
@@ -99,7 +143,6 @@ def get_site_assignments(class_name, site_info):
             # append assignment dictionary
             assignments.append({
                 'class': class_name,
-                # 'assigned': (assigned_month, assigned_day),
                 'due': (due_month, due_day),
                 'title': title,
                 'description':description})
@@ -109,7 +152,15 @@ def get_site_assignments(class_name, site_info):
 
 def get_assignments(sites_info):
     '''
-    TODO
+    Gets all assignments from all sites in site_info.
+
+    params:
+    - sites_info: a dictionary holding the class name as a key
+      and other site info as a value (see README for specific contents)
+
+    returns:
+    - a list of dictionaries where each dictionary holds the info
+      for a single school assignment
     '''
 
     # abort operation if no assignment pages found
@@ -120,8 +171,10 @@ def get_assignments(sites_info):
     # get assignments from every page
     assignments = []
     for (class_name, site_info) in sites_info.items():
+        assignments.extend(_get_site_assignments(class_name, site_info))
+        continue
         try:
-            assignments.extend(get_site_assignments(class_name, site_info))
+            assignments.extend(_get_site_assignments(class_name, site_info))
         except Exception as e:
             print(f'Error parsing {class_name}')
 

@@ -1,24 +1,33 @@
 ﻿# Assignment Scraper
 
+
 ## Description
 
 Authored by [rschubkegel](https://github.com/rschubkegel).
 
 Keeping up with new school assignments can be a pain in the b*tt. This automates the process of checking the assignments pages for new homework.
 
+
 ## Usage
 
-This program requires three JSON files: `credentials.json`, `site-info.json`, and `trello-info.json`. The first two are omitted from the repository for security reasons.
+`python main.py [<credentials-info-path>] [<site-info-path>] [<trello-info-path>]`
+
+This program requires three JSON files: `credentials.json`, `site-info.json`, and `trello-info.json`. If one or more of the paths are not given as program arguments, it is expected that they exist in the working directory. If they do not, the program will exit with error code `1`.
+
+`credentials.json` and `site-info.json` are omitted from the repository for security.
+
 
 ### Tracked Files
 
 The file `trello-info.json` stores the ID of the Trello board that holds assignments and the different lists on that board. While cards are expected to change frequently and labels will change each semester, the board and lists are not likely to change so it is stored in a file for efficiency.
 
+
 ### Untracked Files
 
 This program also expects two untracked files: `credentials.json` and `site-info.json`. The first contains the Trello REST API developer key and token. The second contains a list of school assignment pages from which to parse new assignments.
 
-### Format of `credentials.json`
+
+#### Format of `credentials.json`
 
 ```json
 {
@@ -27,7 +36,8 @@ This program also expects two untracked files: `credentials.json` and `site-info
 }
 ```
 
-### Format of `site-info.json`
+
+#### Format of `site-info.json`
 
 ```json
 {
@@ -40,6 +50,7 @@ This program also expects two untracked files: `credentials.json` and `site-info
     }
 }
 ```
+
 
 ### Generating Request Headers
 

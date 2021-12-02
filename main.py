@@ -1,4 +1,4 @@
-import scraper
+import gfu_utility as cs_scraper
 import trello_utility as trello
 
 
@@ -74,14 +74,14 @@ def main():
     '''
 
     # load program data from files
-    sites_info = scraper.load_sites_info()
+    sites_info = cs_scraper.load_sites_info()
     query = trello.load_credentials()
     trello_board_id, trello_lists = trello.load_board_info()
 
     # compare most recent assignment on Trello to
     # most recent assignment from GFU assignments pages
     new_assignments = trello.filter_new_assignments( \
-        scraper.get_assignments(sites_info), \
+        cs_scraper.get_assignments(sites_info), \
         trello.fetch_assignments(query, trello_lists))
 
     # upload assignments
