@@ -171,8 +171,6 @@ def get_assignments(sites_info):
     # get assignments from every page
     assignments = []
     for (class_name, site_info) in sites_info.items():
-        assignments.extend(_get_site_assignments(class_name, site_info))
-        continue
         try:
             assignments.extend(_get_site_assignments(class_name, site_info))
         except Exception as e:
