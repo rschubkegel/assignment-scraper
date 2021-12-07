@@ -10,11 +10,22 @@ Keeping up with new school assignments can be a pain in the b*tt. This automates
 
 ## Usage
 
-`python main.py [<credentials-info-path>] [<site-info-path>] [<trello-info-path>]`
+First, activate the virtual environment and update dependencies.
 
-This program requires three JSON files: `credentials.json`, `site-info.json`, and `trello-info.json`. If one or more of the paths are not given as program arguments, it is expected that they exist in the working directory. If they do not, the program will exit with error code `1`.
+```
+. .venv/Scripts/activate
+pip install -r requirements.txt
+```
 
-`credentials.json` and `site-info.json` are omitted from the repository for security.
+Then you can run the program with the folling command:
+
+```
+python main.py [<credentials-info-path>] [<site-info-path>] [<trello-info-path>]
+```
+
+The program requires three JSON files: `credentials.json`, `site-info.json`, and `trello-info.json`. If one or more of the paths are not given as program arguments, it is expected that they exist in the working directory. If they do not, the program will exit with error code `1`.
+
+`credentials.json` and `site-info.json` are omitted from the repository for security, so you must add them manually. The file contents are described below.
 
 
 ### Tracked Files
