@@ -31,8 +31,8 @@ def load_credentials(path='credentials.json'):
         try:
             f = open(path)
             data = json.load(f)
-            key = data['key']
-            token = data['token']
+            key = data['trello']['key']
+            token = data['trello']['token']
             print('Credentials loaded from {}'.format(path))
             return {'key': key, 'token': token}
 
