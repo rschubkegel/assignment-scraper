@@ -69,3 +69,21 @@ To generate the proper HTTP request headers, log in to the assignments page once
 
 - [Canvas REST API Documentation](https://canvas.instructure.com/doc/api/index.html)
 - [OAuth Developer Notes](https://canvas.instructure.com/doc/api/file.oauth.html)
+- [Canvas GraphQL API Documentation](https://canvas.beta.instructure.com/doc/api/file.graphql.html)
+- [GraphiQL](https://georgefox.instructure.com/graphiql)
+  - Get assignments for course:
+    ```
+    query MyQuery {
+      course(id: "Q291cnNlLTEyNTYy") {
+        name
+        assignmentsConnection {
+          nodes {
+            name
+            id
+            dueAt
+            description
+          }
+        }
+      }
+    }
+    ```
