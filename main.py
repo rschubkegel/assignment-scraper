@@ -89,4 +89,5 @@ def main():
         new_assignments, ask_to_add=True)
 
 
-main()
+if __name__ == '__main__':
+    main()
