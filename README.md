@@ -73,7 +73,7 @@ To generate the proper HTTP request headers, log in to the assignments page once
 - [GraphiQL](https://georgefox.instructure.com/graphiql)
   - Get assignments for course:
     ```
-    query MyQuery {
+    query GetAssignments {
       course(id: "Q291cnNlLTEyNTYy") {
         name
         assignmentsConnection {
@@ -84,6 +84,15 @@ To generate the proper HTTP request headers, log in to the assignments page once
             description
           }
         }
+      }
+    }
+    ```
+  - Get all courses:
+    ```
+    query GetCourses {
+      allCourses {
+        name
+        id
       }
     }
     ```
