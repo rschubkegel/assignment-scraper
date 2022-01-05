@@ -1,8 +1,4 @@
-import requests
-import re
-import json
-import sys
-import os.path
+import requests, re, json, sys, os.path
 from datetime import date
 
 

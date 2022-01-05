@@ -1,5 +1,6 @@
 import gfu_utility as cs_scraper
 import trello_utility as trello
+import canvas_utility as canvas
 
 
 def print_assignments(assignments):
