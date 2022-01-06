@@ -75,14 +75,13 @@ def main():
     '''
 
     # load program data from files
-    sites_info = cs_scraper.load_sites_info()
     query = trello.load_credentials()
     trello_board_id, trello_lists = trello.load_board_info()
 
     # compare most recent assignment on Trello to
     # most recent assignment from GFU assignments pages
     new_assignments = trello.filter_new_assignments( \
-        cs_scraper.get_assignments(sites_info), \
+        cs_scraper.get_assignments(), \
         trello.fetch_assignments(query, trello_lists))
 
     # upload assignments

@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests, re, json, sys, os.path, markdownify
 
 
-def load_sites_info(path='site-info.json'):
+def _load_sites_info(path='site-info.json'):
     '''
     Attempts to find site info file in program args,
     if that fails it just searches in the local directory.
@@ -145,13 +145,12 @@ def _get_site_assignments(class_name, site_info):
     return assignments
 
 
-def get_assignments(sites_info):
+def get_assignments():
     '''
     Gets all assignments from all sites in site_info.
 
     params:
-    - sites_info: a dictionary holding the class name as a key
-      and other site info as a value (see README for specific contents)
+    - none
 
     returns:
     - a list of dictionaries where each dictionary holds the info
@@ -159,6 +158,7 @@ def get_assignments(sites_info):
     '''
 
     # abort operation if no assignment pages found
+    sites_info = _load_sites_info()
     if len(sites_info.items()) == 0:
         print('No assignment pages found')
         sys.exit()
@@ -172,3 +172,11 @@ def get_assignments(sites_info):
             print(f'Error parsing {class_name}')
 
     return assignments
+
+
+if __name__ == '__main__':
+    data = get_assignments()
+    if data:
+        print(f'Data scraped from GFU pages:\n{json.dumps(data, indent=2)}')
+    else:
+        print('No data found ¯\_(ツ)_/¯')

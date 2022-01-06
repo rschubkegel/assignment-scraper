@@ -6,7 +6,7 @@ from datetime import datetime as dt
 ENDPOINT = 'https://georgefox.instructure.com/api/graphql?access_token={}'
 
 
-def load_credentials(path='credentials.json'):
+def _load_credentials(path='credentials.json'):
     '''
     Attempts to find credentials file in program args,
     if that fails it just searches in the local directory.
@@ -64,7 +64,7 @@ def _send_query(query):
 
     # send query
     response = requests.post(
-        ENDPOINT.format(load_credentials()['token']),
+        ENDPOINT.format(_load_credentials()['token']),
         json={'query': query}
     )
 
@@ -91,7 +91,7 @@ def get_assignments(included_accounts=None):
     '''
 
     # declare return variable
-    assignments = []
+    assignments = {}
 
     # GraphQL query
     data = _send_query(
@@ -99,6 +99,7 @@ def get_assignments(included_accounts=None):
             query GetAssignment {
                 allCourses {
                     name
+                    courseCode
                     term {
                         endAt
                     }
@@ -126,8 +127,17 @@ def get_assignments(included_accounts=None):
     # loop through all courses...
     for course in data['allCourses']:
 
-        # TODO add class label for Trello usage
-        # (see line 170 from gfu_utility.py)
+        # add class label for Trello usage;
+        # if class has no course code, skip it
+        code = re.search(r'\w{4} \d{3}', course['courseCode'])
+        if code:
+            code = code[0]
+        else:
+            print('Error: no course code found for class {}' \
+                .format(course['name']))
+            continue
+
+        c_assignments = []
 
         # only add courses whose term has not ended
         outdated = course['term']['endAt'] \
@@ -146,8 +156,8 @@ def get_assignments(included_accounts=None):
                 if due:
                     due = dt.fromisoformat(due)
                 else:
-                    print('Error: no due date listed for assignment {}' \
-                        .format(a['name']))
+                    print('Error: no due date listed for assignment {} in class {}' \
+                        .format(a['name'], code))
                     continue
 
                 # convert description from HTML to markdown
@@ -156,12 +166,14 @@ def get_assignments(included_accounts=None):
                 else:
                     description = ''
 
-                assignments.append({
+                c_assignments.append({
                     'class': course['name'],
                     'due': (due.month, due.day),
                     'title': a['name'],
                     'description': description}
                 )
+
+            assignments[code] = c_assignments
 
     return assignments
 
@@ -171,4 +183,4 @@ if __name__ == '__main__':
     if data:
         print(f'Data received from Canvas:\n{json.dumps(data, indent=2)}')
     else:
-        print('Something went wrong ¯\_(ツ)_/¯')
+        print('No data found ¯\_(ツ)_/¯')
