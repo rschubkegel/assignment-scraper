@@ -202,13 +202,9 @@ def upload_assignments(query, assignments, board_id, list_id):
 
         # go ahead and add assignment
         else:
-
-            # format due date
-            due = date(2021, a['due'][0], a['due'][1] + 1).isoformat()
-
             url = 'https://api.trello.com/1/cards?' \
                 + 'idList={}&name={}&desc={}&due={}'\
-                .format(list_id, a['title'], a['description'], due)
+                .format(list_id, a['title'], a['description'], a['due'])
 
             # add the Trello card
             response = requests.request(
