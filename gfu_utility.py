@@ -1,10 +1,5 @@
 from bs4 import BeautifulSoup
-import requests
-import re
-import json
-import sys
-import os.path
-import markdownify
+import requests, re, json, sys, os.path, markdownify
 
 
 def load_sites_info(path='site-info.json'):

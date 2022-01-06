@@ -1,4 +1,5 @@
-import requests, json, sys, re, os
+import requests, json, sys, re, os, markdownify
+from datetime import datetime as dt
 
 
 # NOTE: should use HTTP authorization header instead
@@ -69,47 +70,104 @@ def _send_query(query):
 
     # result was good!
     if response.status_code == 200:
-        result = json.loads(response.text)
+        result = json.loads(response.text)['data']
 
     return result
 
 
-def fetch_courses():
+def get_assignments(included_accounts=None):
     '''
-    Returns JSON data in the following format:
-
-    course [
-        name: str
-        id: str
-        account [
-            name: str
-        ]
-    ]
+    Returns all school assignments for included accounts.
+    If query returns error, prints error message and returns empty list.
 
     params:
-    - none
+    - included_accounts: list of course accounts;
+      if None, all assignments are returned;
+      otherwise, only returns assignments whose course account name
+      is in include_accounts
 
     returns:
-    - none
+    - a chonky list of assignments or empty list if error occured
     '''
 
-    return _send_query(
+    # declare return variable
+    assignments = []
+
+    # GraphQL query
+    data = _send_query(
         '''
-            query GetCourses {
+            query GetAssignment {
                 allCourses {
                     name
-                    id
+                    term {
+                        endAt
+                    }
                     account {
                         name
+                    }
+                    assignmentsConnection {
+                        nodes {
+                            dueAt
+                            description
+                            name
+                        }
                     }
                 }
             }
         '''
     )
 
+    # errors cause no assignments to be returned
+    if 'errors' in data.keys():
+        for e in data['errors']:
+            print(e['message'])
+        return assignments
+
+    # loop through all courses...
+    for course in data['allCourses']:
+
+        # TODO add class label for Trello usage
+        # (see line 170 from gfu_utility.py)
+
+        # only add courses whose term has not ended
+        outdated = course['term']['endAt'] \
+            and course['term']['endAt'] < dt.now().isoformat()
+
+        # filter out courses whose account name are not specified
+        excluded = included_accounts \
+            and course['account']['name'] not in included_accounts
+
+        if not outdated and not excluded:
+
+            for a in course['assignmentsConnection']['nodes']:
+
+                # parse date, skipping assignments w/o due dates
+                due = a['dueAt']
+                if due:
+                    due = dt.fromisoformat(due)
+                else:
+                    print('Error: no due date listed for assignment {}' \
+                        .format(a['name']))
+                    continue
+
+                # convert description from HTML to markdown
+                if a['description']:
+                    description = markdownify.markdownify(a['description']).strip()
+                else:
+                    description = ''
+
+                assignments.append({
+                    'class': course['name'],
+                    'due': (due.month, due.day),
+                    'title': a['name'],
+                    'description': description}
+                )
+
+    return assignments
+
 
 if __name__ == '__main__':
-    data = fetch_courses()
+    data = get_assignments(included_accounts=['Undergrad Programs'])
     if data:
         print(f'Data received from Canvas:\n{json.dumps(data, indent=2)}')
     else:
