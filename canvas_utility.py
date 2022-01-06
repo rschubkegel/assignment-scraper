@@ -1,3 +1,4 @@
+# https://canvas.beta.instructure.com/doc/api/file.graphql.html
 import requests, json, sys, re, os, markdownify
 from datetime import datetime as dt
 
@@ -90,8 +91,10 @@ def get_assignments(included_accounts=None):
     - a chonky list of assignments or empty list if error occured
     '''
 
+    print('Fetching assignments from Canvas')
+
     # declare return variable
-    assignments = {}
+    assignments = []
 
     # GraphQL query
     data = _send_query(
@@ -137,8 +140,6 @@ def get_assignments(included_accounts=None):
                 .format(course['name']))
             continue
 
-        c_assignments = []
-
         # only add courses whose term has not ended
         outdated = course['term']['endAt'] \
             and course['term']['endAt'] < dt.now().isoformat()
@@ -153,9 +154,7 @@ def get_assignments(included_accounts=None):
 
                 # parse date, skipping assignments w/o due dates
                 due = a['dueAt']
-                if due:
-                    due = dt.fromisoformat(due)
-                else:
+                if not due:
                     print('Error: no due date listed for assignment {} in class {}' \
                         .format(a['name'], code))
                     continue
@@ -166,14 +165,12 @@ def get_assignments(included_accounts=None):
                 else:
                     description = ''
 
-                c_assignments.append({
-                    'class': course['name'],
-                    'due': (due.month, due.day),
+                assignments.append({
+                    'class': code,
+                    'due': due,
                     'title': a['name'],
                     'description': description}
                 )
-
-            assignments[code] = c_assignments
 
     return assignments
 

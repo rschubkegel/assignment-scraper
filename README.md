@@ -64,10 +64,3 @@ This program also expects two untracked files: `credentials.json` and `site-info
 ### Generating Request Headers
 
 To generate the proper HTTP request headers, log in to the assignments page once, then copy the HTTP request as a cURL command via the web browser's inspector. Convert the cURL command to the proper request using [this tool](https://curl.trillworks.com/). Paste into `site-info.json`.
-
-### Canvas LMS Integration
-
-- [Canvas REST API Documentation](https://canvas.instructure.com/doc/api/index.html)
-- [OAuth Developer Notes](https://canvas.instructure.com/doc/api/file.oauth.html)
-- [Canvas GraphQL API Documentation](https://canvas.beta.instructure.com/doc/api/file.graphql.html)
-- [GraphiQL](https://georgefox.instructure.com/graphiql)

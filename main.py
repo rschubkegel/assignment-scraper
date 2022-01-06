@@ -1,3 +1,4 @@
+from datetime import date, datetime
 import gfu_utility as cs_scraper
 import trello_utility as trello
 import canvas_utility as canvas
@@ -16,10 +17,43 @@ def print_assignments(assignments):
 
     print()
     for a in assignments:
+        due = datetime.fromisoformat(a['due'])
         print('Class:\t\t{}'.format(a['class']))
         print('Title:\t\t{}'.format(a['title']))
-        print('Due date:\t{}/{}'.format(a['due'][0], a['due'][1]))
+        print('Due date:\t{}/{}'.format(due.month, due.day))
         print()
+
+
+def filter_new_assignments(old_assignments, new_assignments):
+    '''
+    Compare assignments by title and date and return the new ones.
+
+    params:
+    - old_assignments: a dict of assignments
+    - new_assignments: a dict of assignments
+
+    returns:
+    - a dict of new assignments (new assignment name not in old assignments
+      and due date is in the future)
+    '''
+
+    result = []
+    for a_new in new_assignments:
+
+        # only add upcoming assignments
+        upcoming = a_new['due'] > date.today().isoformat()
+        if upcoming:
+
+            # only add assignments that aren't in old_assignments
+            exclusive = True
+            for a_old in old_assignments:
+                if a_new['title'] == a_old['title']:
+                    exclusive = False
+                    break
+            if exclusive:
+                result.append(a_new)
+
+    return result
 
 
 def handle_new_assignments(query, board_id, list_id, new_assignments, ask_to_add=False):
@@ -35,8 +69,10 @@ def handle_new_assignments(query, board_id, list_id, new_assignments, ask_to_add
     - ask_to_add: automatically adds assignments to Trello if not set to True
 
     returns:
-    - none
+    - True if new assignments were added, otherwise False
     '''
+
+    assignments_added = False
 
     if len(new_assignments) != 0:
 
@@ -55,10 +91,13 @@ def handle_new_assignments(query, board_id, list_id, new_assignments, ask_to_add
         if choice == 'y' or choice == 'yes':
             trello.upload_assignments( \
                 query, new_assignments, board_id, list_id)
+            assignments_added = True
 
     # there were no new assignments 🙌
     else:
         print('There are no new assignments')
+
+    return assignments_added
 
 
 def main():
@@ -78,15 +117,25 @@ def main():
     query = trello.load_credentials()
     trello_board_id, trello_lists = trello.load_board_info()
 
-    # compare most recent assignment on Trello to
-    # most recent assignment from GFU assignments pages
-    new_assignments = trello.filter_new_assignments( \
-        cs_scraper.get_assignments(), \
-        trello.fetch_assignments(query, trello_lists))
+    # get assignments
+    trello_assignments = trello.get_assignments(query, trello_lists)
+    cs_assignments = cs_scraper.get_assignments()
+    canvas_assignments = canvas.get_assignments( \
+        included_accounts=['Undergrad Programs'])
 
-    # upload assignments
+    # handle new Trello assignments
+    added = handle_new_assignments(query, trello_board_id, trello_lists["To-Do"],
+        filter_new_assignments(trello_assignments, cs_assignments),
+        ask_to_add=True)
+
+    # account for assignments that appear on CS sites *and* Canvas
+    if added:
+        trello_assignments.extend(cs_assignments)
+
+    # handle new Canvas assignments
     handle_new_assignments(query, trello_board_id, trello_lists["To-Do"],
-        new_assignments, ask_to_add=True)
+        filter_new_assignments(trello_assignments, canvas_assignments),
+        ask_to_add=True)
 
 
 if __name__ == '__main__':

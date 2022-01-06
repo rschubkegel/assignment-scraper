@@ -1,5 +1,6 @@
+# https://developer.atlassian.com/cloud/trello/rest/
 import requests, re, json, sys, os.path
-from datetime import date
+from datetime import date, datetime
 
 
 def load_credentials(path='credentials.json'):
@@ -84,7 +85,63 @@ def load_board_info(path='trello-info.json'):
         sys.exit(1)
 
 
-def fetch_assignments(query, trello_lists):
+def _trello_card_to_dict(card):
+    '''
+    Converts a Trello card (received from HTTPS request) to a Python dict.
+
+    params:
+    - card: the Trello card received from REST request
+
+    returns:
+    - Python dict with keys class, title, due, and description,
+      or None if the Trello card didn't have all those fields
+    '''
+
+    result = None
+
+    # parse due date
+    if 'due' in card.keys():
+        due = re.sub(r'\w$', '', card['due'])
+
+        # return dictionary
+        result = {
+            'class': card['labels'][0]['name'],
+            'title': card['name'],
+            'due': due,
+            'description': card['desc']
+        }
+
+    # this Trello card didn't have a due date
+    else:
+        print('Error: card {} has no due date'.format(card['name']))
+
+    return result
+
+
+def _get_trello_labels(query, board_id):
+    '''
+    Gets the labels on the Trello board specified in program constants.
+
+    params:
+    - query: a dictionary with Trello API key and token
+    - board_id: the ID of the Trello board whose labels are being fetched
+
+    returns:
+    - a list of Trello labels (class names)
+    '''
+
+    labels_json = json.loads(requests.request(
+        'GET',
+        f'https://api.trello.com/1/boards/{board_id}/labels',
+        params=query
+    ).text)
+    labels = {}
+    for l in labels_json:
+        labels[l['name']] = l['id']
+    return labels
+
+
+def get_assignments(query, trello_lists):
     '''
     Returns a Python object of all the card in the specified lists.
 
@@ -115,85 +172,6 @@ def fetch_assignments(query, trello_lists):
             cards_list.append(card_dict)
 
     return cards_list
-
-
-def _trello_card_to_dict(card):
-    '''
-    Converts a Trello card (received from HTTPS request) to a Python dict.
-
-    params:
-    - card: the Trello card received from REST request
-
-    returns:
-    - Python dict with keys class, title, due, and description,
-      or None if the Trello card didn't have all those fields
-    '''
-
-    # parse due date
-    try:
-        nums = re.findall(r'-\d\d', card['due'])
-        new_month = int(nums[0][1:])
-        new_day = int(nums[1][1:])
-
-        # return dictionary
-        return {
-            'class': card['labels'][0]['name'],
-            'title': card['name'],
-            'due': (new_month, new_day),
-            'description': card['desc']
-        }
-
-    # this Trello card didn't have a due date
-    except Exception as error:
-        return None
-
-
-def _get_trello_labels(query, board_id):
-    '''
-    Gets the labels on the Trello board specified in program constants.
-
-    params:
-    - query: a dictionary with Trello API key and token
-    - board_id: the ID of the Trello board whose labels are being fetched
-
-    returns:
-    - a list of Trello labels (class names)
-    '''
-
-    labels_json = json.loads(requests.request(
-        'GET',
-        f'https://api.trello.com/1/boards/{board_id}/labels',
-        params=query
-    ).text)
-    labels = {}
-    for l in labels_json:
-        labels[l['name']] = l['id']
-    return labels
-
-
-def filter_new_assignments(assignments, trello_cards):
-    '''
-    Compare assignments by *title* and add return the new ones.
-
-    params:
-    - assignments: a dict of assignments from the assignments page
-    - trello_cards: a dict of assignments from Trello
-
-    returns:
-    - a dict of new assignments (name did not appear on Trello)
-    '''
-
-    new_assignments = []
-    for a in assignments:
-        is_new = True
-        for card in trello_cards:
-            if a['title'] == card['title']:
-                is_new = False
-                break
-        if is_new:
-            new_assignments.append(a)
-
-    return new_assignments
 
 
 def upload_assignments(query, assignments, board_id, list_id):

@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from datetime import datetime
 import requests, re, json, sys, os.path, markdownify
 
 
@@ -118,6 +119,8 @@ def _get_site_assignments(class_name, site_info):
             try:
                 due_month = int(due[0])
                 due_day = int(due[1])
+                due = datetime(datetime.today().year, \
+                    due_month, due_day, 23, 59).isoformat()
 
             # if date parsing failed, this assignment has no due date listed
             # and should not be added to Trello
@@ -138,7 +141,7 @@ def _get_site_assignments(class_name, site_info):
             # append assignment dictionary
             assignments.append({
                 'class': class_name,
-                'due': (due_month, due_day),
+                'due': due,
                 'title': title,
                 'description':description})
 
