@@ -123,19 +123,21 @@ def main():
     canvas_assignments = canvas.get_assignments( \
         included_accounts=['Undergrad Programs'])
 
-    # handle new Trello assignments
-    added = handle_new_assignments(query, trello_board_id, trello_lists["To-Do"],
-        filter_new_assignments(trello_assignments, cs_assignments),
-        ask_to_add=True)
+    # handle new Trello assignments (if any)
+    if cs_assignments:
+        added = handle_new_assignments(query, trello_board_id, trello_lists["To-Do"],
+            filter_new_assignments(trello_assignments, cs_assignments),
+            ask_to_add=True)
 
-    # account for assignments that appear on CS sites *and* Canvas
-    if added:
-        trello_assignments.extend(cs_assignments)
+        # account for assignments that appear on CS sites *and* Canvas
+        if added:
+            trello_assignments.extend(cs_assignments)
 
     # handle new Canvas assignments
-    handle_new_assignments(query, trello_board_id, trello_lists["To-Do"],
-        filter_new_assignments(trello_assignments, canvas_assignments),
-        ask_to_add=True)
+    if canvas_assignments:
+        handle_new_assignments(query, trello_board_id, trello_lists["To-Do"],
+            filter_new_assignments(trello_assignments, canvas_assignments),
+            ask_to_add=True)
 
 
 if __name__ == '__main__':

@@ -39,7 +39,7 @@ def _load_credentials(path='credentials.json'):
             return {'token': token}
 
         except Exception as e:
-            print('Fatal error: '.format(e))
+            print('Fatal error loading Canvas credentials: '.format(e))
             sys.exit(1)
 
     # file did not exist

@@ -160,19 +160,21 @@ def get_assignments():
       for a single school assignment
     '''
 
+    assignments = None
+
     # abort operation if no assignment pages found
     sites_info = _load_sites_info()
     if len(sites_info.items()) == 0:
         print('No assignment pages found')
-        sys.exit()
 
     # get assignments from every page
-    assignments = []
-    for (class_name, site_info) in sites_info.items():
-        try:
-            assignments.extend(_get_site_assignments(class_name, site_info))
-        except Exception as e:
-            print(f'Error parsing {class_name}')
+    else:
+        assignments = []
+        for (class_name, site_info) in sites_info.items():
+            try:
+                assignments.extend(_get_site_assignments(class_name, site_info))
+            except Exception as e:
+                print(f'Error parsing {class_name}')
 
     return assignments
 
