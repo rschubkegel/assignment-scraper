@@ -1,6 +1,5 @@
 # https://developer.atlassian.com/cloud/trello/rest/
 import requests, re, json, sys, os.path
-from datetime import date, datetime
 
 
 def load_credentials(path='credentials.json'):
@@ -100,7 +99,7 @@ def _trello_card_to_dict(card):
     result = None
 
     # parse due date
-    if 'due' in card.keys():
+    if 'due' in card.keys() and card['due']:
         due = re.sub(r'\w$', '', card['due'])
 
         # return dictionary
@@ -113,7 +112,8 @@ def _trello_card_to_dict(card):
 
     # this Trello card didn't have a due date
     else:
-        print('Error: card {} has no due date'.format(card['name']))
+        pass
+        # print('Error: card {} has no due date'.format(card['name']))
 
     return result
 

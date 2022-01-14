@@ -136,8 +136,7 @@ def get_assignments(included_accounts=None):
         if code:
             code = code[0]
         else:
-            print('Error: no course code found for class {}' \
-                .format(course['name']))
+            # print('Error: no course code found for class {}'.format(course['name']))
             continue
 
         # only add courses whose term has not ended
@@ -155,8 +154,7 @@ def get_assignments(included_accounts=None):
                 # parse date, skipping assignments w/o due dates
                 due = a['dueAt']
                 if not due:
-                    print('Error: no due date listed for assignment {} in class {}' \
-                        .format(a['name'], code))
+                    # print('Error: no due date listed for assignment {} in class {}'.format(a['name'], code))
                     continue
 
                 # convert description from HTML to markdown
