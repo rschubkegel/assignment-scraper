@@ -114,6 +114,7 @@ def get_assignments(included_accounts=None):
                             dueAt
                             description
                             name
+                            unlockAt
                         }
                     }
                 }
@@ -128,6 +129,7 @@ def get_assignments(included_accounts=None):
         return assignments
 
     # loop through all courses...
+    today_iso = dt.now().isoformat()
     for course in data['allCourses']:
 
         # add class label for Trello usage;
@@ -141,7 +143,7 @@ def get_assignments(included_accounts=None):
 
         # only add courses whose term has not ended
         outdated = course['term']['endAt'] \
-            and course['term']['endAt'] < dt.now().isoformat()
+            and course['term']['endAt'] < today_iso
 
         # filter out courses whose account name are not specified
         excluded = included_accounts \
@@ -152,9 +154,10 @@ def get_assignments(included_accounts=None):
             for a in course['assignmentsConnection']['nodes']:
 
                 # parse date, skipping assignments w/o due dates
+                # and skipping assignments that are still locked
                 due = a['dueAt']
-                if not due:
-                    # print('Error: no due date listed for assignment {} in class {}'.format(a['name'], code))
+                if not due or \
+                (a['unlockAt'] and a['unlockAt'] > today_iso):
                     continue
 
                 # convert description from HTML to markdown

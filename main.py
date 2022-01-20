@@ -1,3 +1,17 @@
+'''
+Main driver that pulls info from Trello, GFU CSIS Course Sites, and Canvas
+and determines which ones are "new" (have not been added to Trello) and
+uploads those.
+
+After parsing, each assignment will be a Python dictionary with these keys:
+{
+  'class'
+  'due'
+  'title'
+  'description'
+}
+'''
+
 from datetime import date, datetime
 import gfu_utility as cs_scraper
 import trello_utility as trello
@@ -47,7 +61,8 @@ def filter_new_assignments(old_assignments, new_assignments):
             # only add assignments that aren't in old_assignments
             exclusive = True
             for a_old in old_assignments:
-                if a_new['title'] == a_old['title']:
+                if a_new['title'] == a_old['title'] \
+                and a_new['class'] == a_old['class']:
                     exclusive = False
                     break
             if exclusive:
@@ -81,17 +96,24 @@ def handle_new_assignments(query, board_id, list_id, new_assignments, ask_to_add
         print_assignments(new_assignments)
 
         # automatically add new assignments if param not set to true
-        choice = 'y'
-        if ask_to_add:
-            # only add new assignments if user wants to
-            choice = input('Would you like to add them to Trello (y/n)? ') \
-                .lower()
+        while ask_to_add:
 
-        # add new assignments iff user entered y or yes
-        if choice == 'y' or choice == 'yes':
-            trello.upload_assignments( \
-                query, new_assignments, board_id, list_id)
-            assignments_added = True
+            # only add new assignments if user wants to
+            choice = input('Would you like to add them to Trello (y/n)? ')
+            choice = choice.lower()
+
+            # add new assignments iff user entered y or yes
+            if choice == 'y' or choice == 'yes':
+                trello.upload_assignments( \
+                    query, new_assignments, board_id, list_id)
+                assignments_added = True
+                ask_to_add = False
+
+            # if choice not valid, say so!
+            elif choice == 'n' or choice == 'no':
+                ask_to_add = False
+            else:
+                print('Invalid response')
 
     # there were no new assignments 🙌
     else:

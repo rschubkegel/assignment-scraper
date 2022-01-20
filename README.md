@@ -6,6 +6,8 @@ Authored by [rschubkegel](https://github.com/rschubkegel).
 
 Keeping up with new school assignments can be a pain in the b\*tt. This automates the process of checking the assignments pages for new homework.
 
+_Disclaimer: I know this is not programmed in the best way; i.e. there is no assignment chaching, user authentication should use OAuth, etc. This scraper is for personal use and not expected to be professional quality._
+
 ## Usage
 
 First, activate the virtual environment and update dependencies.
