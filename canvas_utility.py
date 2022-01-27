@@ -115,6 +115,7 @@ def get_assignments(included_accounts=None):
                             description
                             name
                             unlockAt
+                            htmlUrl
                         }
                     }
                 }
@@ -165,6 +166,10 @@ def get_assignments(included_accounts=None):
                     description = markdownify.markdownify(a['description']).strip()
                 else:
                     description = ''
+
+                # add assignment Canvas URL to assignment description
+                if a['htmlUrl']:
+                    description = '{}\n\n{}'.format(a['htmlUrl'], description)
 
                 assignments.append({
                     'class': code,
